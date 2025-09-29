@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { socket } from './lib/socket';
+import { BACKEND_BASE } from './lib/api';
 
 type Monitor = {
   id: string;
@@ -15,7 +16,7 @@ function App() {
   const [q, setQ] = useState('');
 
   async function load() {
-    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/monitors`);
+    const res = await fetch(`${BACKEND_BASE}/api/monitors`);
     const data = await res.json();
     setMonitors(data.monitors || []);
   }
@@ -119,7 +120,7 @@ function AddServiceButton({ onAdded }: { onAdded: () => void }) {
 
   async function submit() {
     setSaving(true);
-    await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/monitors`, {
+    await fetch(`${BACKEND_BASE}/api/monitors`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, name, url })
     });
     setSaving(false);

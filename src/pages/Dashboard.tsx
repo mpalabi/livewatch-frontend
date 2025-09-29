@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { socket } from '../lib/socket';
-import { apiFetch } from '../lib/api';
+import { apiFetch, BACKEND_BASE } from '../lib/api';
 import EmailChips from '../components/EmailChips';
 import Topbar from '../components/Topbar';
 import AuthOverlay from '../components/AuthOverlay';
@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [q, setQ] = useState('');
   const [authed, setAuthed] = useState<boolean>(false);
-  const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+  const BASE = BACKEND_BASE;
 
   async function load() {
     const res = await apiFetch(`/api/monitors`);
@@ -99,7 +99,7 @@ function UsageCard({ monitors }: { monitors: any[] }) {
       if (!monitors.length) { setSummary(null); return; }
       // Use the first monitor as representative for now
       const id = monitors[0].id;
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/monitors/${id}/metrics`);
+      const res = await fetch(`${BASE}/api/monitors/${id}/metrics`);
       const json = await res.json();
       if (!cancelled) setSummary({ uptimePct: json.uptimePct || 0, avgMs: json.avgResponseMs || 0 });
     }

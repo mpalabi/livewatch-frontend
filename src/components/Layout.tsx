@@ -1,12 +1,13 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { clearStoredToken } from '../lib/secureStorage';
+import { BACKEND_BASE } from '../lib/api';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const loc = useLocation();
   async function logout() {
     try {
-      await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+      await fetch(`${BACKEND_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch {}
     clearStoredToken();
     // Trigger login overlay by navigating to root and reloading

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BACKEND_BASE } from '../lib/api';
 
 export default function AuthOverlay({ onAuthed }: { onAuthed: () => void }) {
   const [step, setStep] = useState<'email' | 'code'>('email');
@@ -9,7 +10,7 @@ export default function AuthOverlay({ onAuthed }: { onAuthed: () => void }) {
 
   async function requestCode() {
     setLoading(true); setError('');
-    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/auth/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
+    const res = await fetch(`${BACKEND_BASE}/api/auth/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
     setLoading(false);
     if (!res.ok) { setError('Failed to send code'); return; }
     setStep('code');
@@ -17,7 +18,7 @@ export default function AuthOverlay({ onAuthed }: { onAuthed: () => void }) {
 
   async function verifyCode() {
     setLoading(true); setError('');
-    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/auth/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email, code }) });
+    const res = await fetch(`${BACKEND_BASE}/api/auth/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email, code }) });
     setLoading(false);
     if (!res.ok) { setError('Invalid code'); return; }
     try {
