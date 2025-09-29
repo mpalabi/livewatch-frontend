@@ -99,7 +99,7 @@ function UsageCard({ monitors }: { monitors: any[] }) {
       if (!monitors.length) { setSummary(null); return; }
       // Use the first monitor as representative for now
       const id = monitors[0].id;
-      const res = await fetch(`${BASE}/api/monitors/${id}/metrics`);
+      const res = await fetch(`${BACKEND_BASE}/api/monitors/${id}/metrics`);
       const json = await res.json();
       if (!cancelled) setSummary({ uptimePct: json.uptimePct || 0, avgMs: json.avgResponseMs || 0 });
     }
