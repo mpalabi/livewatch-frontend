@@ -53,7 +53,6 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <div className="card-title">Projects</div>
-            <button className="button">Deploy</button>
           </div>
           <div className="card-content">
             {filtered.length === 0 ? (
