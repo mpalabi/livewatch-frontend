@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { socket } from '../lib/socket';
+import EmailChips from '../components/EmailChips';
 
 export default function MonitorDetails() {
   const { id } = useParams<{ id: string }>();
@@ -9,6 +10,9 @@ export default function MonitorDetails() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const [uptime, setUptime] = useState<{ month: string; days: Array<{ date: string; uptime: number }> } | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<{ type: 'web_app' | 'api' | 'service'; name: string; url: string; method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD'; expectedStatus: number; intervalSeconds: number; timeoutMs: number; emails: string[] }>({ type: 'web_app', name: '', url: '', method: 'GET', expectedStatus: 200, intervalSeconds: 60, timeoutMs: 10000, emails: [] });
 
   useEffect(() => {
     async function load() {
@@ -22,6 +26,44 @@ export default function MonitorDetails() {
   }, [id]);
 
   const m = data?.monitor;
+  function openEdit() {
+    if (!m) return;
+    setForm({
+      type: m.type,
+      name: m.name,
+      url: m.url,
+      method: (m.method || 'GET') as any,
+      expectedStatus: Number(m.expectedStatus || 200),
+      intervalSeconds: Number(m.intervalSeconds || 60),
+      timeoutMs: Number(m.timeoutMs || 10000),
+      emails: [],
+    });
+    setEditOpen(true);
+  }
+  async function saveEdit() {
+    if (!id) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/api/monitors/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          type: form.type,
+          name: form.name,
+          url: form.url,
+          method: form.method,
+          expectedStatus: form.expectedStatus,
+          intervalSeconds: form.intervalSeconds,
+          timeoutMs: form.timeoutMs,
+          notifyEmails: form.emails,
+        }),
+      });
+      // reflect locally
+      setData((prev: any) => prev ? { ...prev, monitor: { ...prev.monitor, ...form } } : prev);
+      setEditOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     async function loadUptime() {
@@ -219,35 +261,37 @@ export default function MonitorDetails() {
       {!loading && !m && <div>Not found</div>}
       {!loading && m && (
         <>
-          <div className="row mb-6">
-            <Link to="/" className="button">← Back</Link>
-            <div className="card-title">{m.name}</div>
+          <div className="row mb-6" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="row">
+              <Link to="/" className="button">← Back</Link>
+              <div className="card-title">{m.name}</div>
+            </div>
+            <div className="row">
+              <button className="button" onClick={openEdit}>Edit</button>
+            </div>
           </div>
           <div className="grid grid-c2">
             <div className="card">
-              <div className="card-header"><div className="card-title">Overview</div></div>
+              <div className="card-header" style={{ justifyContent: 'space-between' }}>
+                <div className="card-title">Overview</div>
+                {m.latestCheck && (
+                  <span className={m.latestCheck.status === 'up' ? 'badge green' : 'badge red'}>
+                    {m.latestCheck.status.toUpperCase()} ({m.latestCheck.httpStatus ?? '—'})
+                  </span>
+                )}
+              </div>
               <div className="card-content">
                 <div className="kv">
                   <div className="kv-label">Type</div>
                   <div className="kv-value mono">{m.type}</div>
                   <div className="kv-label">URL</div>
-                  <div className="kv-value mono">{m.method} {m.url}</div>
+                  <div className="kv-value mono" style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}>{m.method} {m.url}</div>
                   <div className="kv-label">Expected</div>
                   <div className="kv-value mono">{m.expectedStatus}</div>
                   <div className="kv-label">Interval</div>
                   <div className="kv-value mono">{m.intervalSeconds}s</div>
                   <div className="kv-label">Timeout</div>
                   <div className="kv-value mono">{m.timeoutMs}ms</div>
-                  <div className="kv-label">Status</div>
-                  <div className="kv-value">
-                    {m.latestCheck?.status === 'up' ? (
-                      <span className="badge green">UP ({m.latestCheck?.httpStatus ?? '—'})</span>
-                    ) : m.latestCheck?.status === 'down' ? (
-                      <span className="badge red">DOWN ({m.latestCheck?.httpStatus ?? '—'})</span>
-                    ) : (
-                      <span className="badge gray">N/A</span>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -304,6 +348,52 @@ export default function MonitorDetails() {
               </div>
             </div>
           </div>
+          {editOpen && (
+            <div className="modal-backdrop">
+              <div className="modal">
+                <div className="card-title" style={{ marginBottom: 12 }}>Edit Monitor</div>
+                <div className="grid" style={{ gap: 10 }}>
+                  <div className="row">
+                    <label className="text-muted" style={{ width: 100 }}>Type</label>
+                    <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as any })}>
+                      <option value="web_app">Web App</option>
+                      <option value="api">API</option>
+                      <option value="service">Service</option>
+                    </select>
+                  </div>
+                  <div className="row">
+                    <label className="text-muted" style={{ width: 100 }}>Method</label>
+                    <select className="input" value={form.method} onChange={e => setForm({ ...form, method: e.target.value as any })}>
+                      {['GET','POST','PUT','PATCH','DELETE','HEAD'].map(m => (<option key={m} value={m}>{m}</option>))}
+                    </select>
+                  </div>
+                  <input className="input" placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                  <input className="input" placeholder="URL (https://...)" value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} />
+                  <div className="row">
+                    <label className="text-muted" style={{ width: 100 }}>Expected</label>
+                    <input className="input" type="number" value={form.expectedStatus} onChange={e => setForm({ ...form, expectedStatus: Number(e.target.value) })} />
+                  </div>
+                  <div className="row">
+                    <label className="text-muted" style={{ width: 100 }}>Interval (s)</label>
+                    <input className="input" type="number" value={form.intervalSeconds} onChange={e => setForm({ ...form, intervalSeconds: Number(e.target.value) })} />
+                  </div>
+                  <div className="row">
+                    <label className="text-muted" style={{ width: 100 }}>Timeout (ms)</label>
+                    <input className="input" type="number" value={form.timeoutMs} onChange={e => setForm({ ...form, timeoutMs: Number(e.target.value) })} />
+                  </div>
+                  <div className="grid" style={{ gap: 6 }}>
+                    <label className="text-muted">Notification emails</label>
+                    <EmailChips value={form.emails} onChange={(v) => setForm({ ...form, emails: v })} placeholder="Add email and press Enter" />
+                    <div className="text-muted" style={{ fontSize: 12 }}>Leave empty to keep existing links.</div>
+                  </div>
+                </div>
+                <div className="row mt-6" style={{ justifyContent: 'flex-end' }}>
+                  <button className="button" onClick={() => setEditOpen(false)}>Cancel</button>
+                  <button className="button" disabled={saving || !form.name || !form.url} onClick={saveEdit}>{saving ? 'Saving…' : 'Save'}</button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
