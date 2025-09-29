@@ -55,3 +55,17 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto
 .badge.green { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 .badge.red { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
 .badge.gray { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .container { padding: 16px; max-width: 920px; }
+}
+@media (max-width: 860px) {
+  .grid-c2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; gap: 8px; }
+  .search { width: 100%; }
+  .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .modal { width: 100%; margin: 0 12px; }
+}
