@@ -44,7 +44,7 @@ export default function Dashboard() {
   }, [q, monitors]);
 
   return (
-    <div className="container" style={{ transform: authed ? 'translateX(0)' : 'translateX(40px)', transition: 'transform 200ms ease' }}>
+    <div className="container" style={{ ...(authed ? {} as any : { transform: 'translateX(40px)' }), transition: 'transform 200ms ease' }}>
       <Topbar query={q} onQueryChange={setQ} right={<AddServiceButton onAdded={() => load()} />} />
 
       <div className="grid grid-c2">
